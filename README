@@ -1,18 +1,114 @@
-Send SPI commands via an FPGA
+chris@wotan$ cd $HOME/build
+chris@wotan$ wget -q http://www.swaton.ukfsn.org/bin/makestuff-lindar-20130126.tar.gz
+chris@wotan$ tar zxf makestuff-lindar-20130126.tar.gz 
+chris@wotan$ cd makestuff
+chris@wotan$ common/msget.sh hdlmake
+:
+chris@wotan$ cd libs/
+chris@wotan$ wget -q http://www.swaton.ukfsn.org/bin/fpgalink-20130321/fpgalink-bin.tar.gz
+chris@wotan$ tar zxf fpgalink-bin.tar.gz
+chris@wotan$ mv libfpgalink-20130321 libfpgalink
+chris@wotan$ cd ../hdlmake/apps/
+chris@wotan$ ../bin/hdlmake.py -g makestuff/spi_talk
+:
+chris@wotan$ cd makestuff/spi_talk/sdread/
+chris@wotan$ make
+:
+chris@wotan$ cd ../vhdl/
+chris@wotan$ ../../../../bin/hdlmake.py -t ../templates/fx2min/vhdl -b lx9
+chris@wotan$ 
+chris@wotan$ 
+chris@wotan$ 
+chris@wotan$ # Connect SD-Card...
+chris@wotan$ ../../../../../libs/libfpgalink/lin.x64/rel/flcli -i 04b4:8613 -v 1d50:602b -p J:A7A0A3A1:top_level.xsvf -a 'w0 0000000000000000000000000000000000000000000000000000000000000000FFFFFFFFFFFFFFFFFFFF;w1 02;w0 FF400000000095FFFFFFFFFFFFFFFFFFFFFFFFFFFFFF;r0 40'
+Attempting to open connection to FPGALink device 1d50:602b...
+Programming device...
+Executing CommFPGA actions on FPGALink device 1d50:602b...
+         00 01 02 03 04 05 06 07 08 09 0A 0B 0C 0D 0E 0F
+00000000 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 ................
+00000010 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 ................
+00000020 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 ................
+00000030 00 3F 01 FF FF FF FF FF FF FF FF FF FF FF FF FF .?..............
+chris@wotan$ ../sdread/lin.x64/rel/sdread -i 04b4:8613 -v 1d50:602b -p J:A7A0A3A1:top_level.xsvf -f -b 0x2672
+SD-Card Hackery Example Copyright (C) 2013 Chris McClelland
 
-SD-Card:
-  LX9:
-    # Read from SD-Card at 24MHz:
-    hdlmake.py -t ../templates/fx2min/vhdl -b lx9
-    flcli -i 04b4:8613 -v 1d50:602b -p J:A7A0A3A1:top_level.xsvf -a 'w0 0000000000000000000000000000000000000000000000000000000000000000FFFFFFFFFFFFFFFFFFFF;w1 02;w0 FF400000000095FFFFFFFFFFFFFFFFFFFFFFFFFFFFFF;r0 40'
-    sdread -i 04b4:8613 -v 1d50:602b -p J:A7A0A3A1:../vhdl/top_level.xsvf -b 0x2672 -f
-  Nexys2-1200:
-    # Read from SD-Card at 400kHz:
-    hdlmake.py -t ../templates/fx2all/vhdl -b nexys2-1200
-    flcli -i 04b4:8613 -v 1d50:602b -w D7+ -p J:D0D2D3D4:top_level.xsvf -a 'w0 0000000000000000000000000000000000000000000000000000000000000000FFFFFFFFFFFFFFFFFFFF;w1 02;w0 FF400000000095FFFFFFFFFFFFFFFFFFFFFFFFFFFFFF;r0 40'
-    sdread -i 04b4:8613 -v 1d50:602b -d D7+ -p J:D0D2D3D4:/home/chris/makestuff/hdlmake/apps/makestuff/spi_talk/vhdl/top_level.xsvf -b 0x2672
+Attempting to open connection to FPGALink device 1d50:602b...
+Executing programming configuration "J:A7A0A3A1:top_level.xsvf"...
+Reading SD card block 0x00002672...
+ born in the
+open pasture and suckled by a wolf, that they might have seen with
+clearer eyes what field they were called to labor in. Who made them
+serfs of the soil? Why should they eat their sixty acres, when man is
+condemned to eat only his peck of dirt? Why should they begin digging
+their graves as soon as they are born? They have got to live a man's
+life, pushing all these things before them, and get on as well as they
+can. How many a poor immortal soul have I met well-nigh crushed and
+smothere
+chris@wotan$ 
+chris@wotan$ 
+chris@wotan$ 
+chris@wotan$ # Connect AT45DB161D...
+chris@wotan$ ../../../../../libs/libfpgalink/lin.x64/rel/flcli -i 04b4:8613 -v 1d50:602b -p J:A7A0A3A1:top_level.xsvf -a 'w1 03;w0 8400000012345678;w1 010103;w0 D1000000FFFFFFFF;w1 01;r0 10'
+Attempting to open connection to FPGALink device 1d50:602b...
+Programming device...
+Executing CommFPGA actions on FPGALink device 1d50:602b...
+         00 01 02 03 04 05 06 07 08 09 0A 0B 0C 0D 0E 0F
+00000000 00 00 00 00 00 00 00 00 00 00 00 00 12 34 56 78 .............4Vx
+chris@wotan$ 
+chris@wotan$ 
+chris@wotan$ 
+chris@wotan$ # Connect SD-Card to Nexys2...
+chris@wotan$ ../../../../bin/hdlmake.py -c
+:
+chris@wotan$ ../../../../bin/hdlmake.py -t ../templates/fx2all/vhdl -b nexys2-1200
+:
+chris@wotan$ ../sdread/lin.x64/rel/sdread -i 04b4:8613 -v 1d50:602b -d D7+ -p J:D0D2D3D4:top_level.xsvf -b 0x2672
+SD-Card Hackery Example Copyright (C) 2013 Chris McClelland
 
-Atmel AT45DB161D SPI-Flash:
-  LX9:
-    # Write four bytes to buf1 and then read them back, at 24MHz:
-    flcli -v 1d50:602b -p J:A7A0A3A1:top_level.xsvf -a 'w1 03;w0 8400000012345678;w1 010103;w0 D1000000FFFFFFFF;w1 01;r0 10'
+Attempting to open connection to FPGALink device 1d50:602b...
+Loading firmware into 04b4:8613...
+Awaiting renumeration........
+Attempting to open connection to FPGLink device 1d50:602b again...
+Configuring ports...
+Executing programming configuration "J:D0D2D3D4:top_level.xsvf"...
+Reading SD card block 0x00002672...
+ born in the
+open pasture and suckled by a wolf, that they might have seen with
+clearer eyes what field they were called to labor in. Who made them
+serfs of the soil? Why should they eat their sixty acres, when man is
+condemned to eat only his peck of dirt? Why should they begin digging
+their graves as soon as they are born? They have got to live a man's
+life, pushing all these things before them, and get on as well as they
+can. How many a poor immortal soul have I met well-nigh crushed and
+smothere
+chris@wotan$ ../sdread/lin.x64/rel/sdread -v 1d50:602b -b 0x2673
+SD-Card Hackery Example Copyright (C) 2013 Chris McClelland
+
+Attempting to open connection to FPGALink device 1d50:602b...
+Reading SD card block 0x00002673...
+d under its load, creeping down the road of life, pushing before
+it a barn seventy-five feet by forty, its Augean stables never cleansed,
+and one hundred acres of land, tillage, mowing, pasture, and woodlot!
+The portionless, who struggle with no such unnecessary inherited
+encumbrances, find it labor enough to subdue and cultivate a few cubic
+feet of flesh.
+
+But men labor under a mistake. The better part of the man is soon plowed
+into the soil for compost. By a seeming fate, commonly called necessity
+chris@wotan$ 
+chris@wotan$ 
+chris@wotan$ 
+chris@wotan$ # For some reason the flcli walk-through doesn't work on Nexys2...
+chris@wotan$ ../../../../../libs/libfpgalink/lin.x64/rel/flcli -i 04b4:8613 -v 1d50:602b -d D7+ -p J:D0D2D3D4:top_level.xsvf -a 'w0 0000000000000000000000000000000000000000000000000000000000000000FFFFFFFFFFFFFFFFFFFF;w1 02;w0 FF400000000095FFFFFFFFFFFFFFFFFFFFFFFFFFFFFF;r0 40'
+Attempting to open connection to FPGALink device 1d50:602b...
+Loading firmware into 04b4:8613...
+Awaiting renumeration........
+Attempting to open connection to FPGLink device 1d50:602b again...
+Programming device...
+Executing CommFPGA actions on FPGALink device 1d50:602b...
+         00 01 02 03 04 05 06 07 08 09 0A 0B 0C 0D 0E 0F
+00000000 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02 ................
+00000010 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02 ................
+00000020 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02 ................
+00000030 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02 ................
+
