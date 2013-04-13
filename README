@@ -16,6 +16,7 @@ chris@wotan$ make
 :
 chris@wotan$ cd ../vhdl/
 chris@wotan$ ../../../../bin/hdlmake.py -t ../templates/fx2min/vhdl -b lx9
+:
 chris@wotan$ 
 chris@wotan$ 
 chris@wotan$ 
