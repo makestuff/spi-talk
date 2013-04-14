@@ -113,3 +113,17 @@ Executing CommFPGA actions on FPGALink device 1d50:602b...
 00000020 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02 ................
 00000030 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02 ................
 
+
+The R1 bits are as follows:
+  0 - TURBO: 24MHz SPI clk when '1'; 400kHz SPI clk when '0'
+  1 - CHIPSEL: active when '1'; inactive when '0'
+  2 - SUPPRESS: suppress response when '1'
+
+We can use SUPPRESS to ignore all but the actually relevant response bytes:
+  flcli -v 1d50:602b -p J:A7A0A3A1:top_level.xsvf
+  flcli -v 1d50:602b -a 'w1 07;w0 8400000012345678;w1 05'
+  flcli -v 1d50:602b -a 'w1 07;w0 D1000000;w1 03;w0 FFFFFFFF;w1 05;r0 4'
+                            ^^                ^^                ^^
+                            SCT               CT                ST
+
+In this way we only get the four readback bytes, and not all the garbage.

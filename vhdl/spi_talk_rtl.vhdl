@@ -32,10 +32,11 @@ architecture rtl of spi_talk is
 	signal fifoValid   : std_logic;
 	signal fifoReady   : std_logic;
 
-	signal config      : std_logic_vector(1 downto 0);
-	signal config_next : std_logic_vector(1 downto 0);
+	signal config      : std_logic_vector(2 downto 0);
+	signal config_next : std_logic_vector(2 downto 0);
 	constant TURBO     : integer := 0;
 	constant CHIPSEL   : integer := 1;
+	constant SUPPRESS  : integer := 2;
 begin
 	-- Infer registers
 	process(clk_in)
@@ -46,31 +47,32 @@ begin
 	end process;
 	
 	config_next <=
-		h2fData_in(1 downto 0) when h2fValid_in = '1' and chanAddr_in /= "0000000"
+		h2fData_in(2 downto 0) when h2fValid_in = '1' and chanAddr_in /= "0000000"
 		else config;
 
 	sendData <= h2fData_in;
 	sendValid <= h2fValid_in when chanAddr_in = "0000000" else '0';
 	h2fReady_out <= sendReady when chanAddr_in = "0000000" else '1';
 
-	f2hData_out <= fifoData when chanAddr_in = "0000000" else "000000" & config;
+	f2hData_out <= fifoData when chanAddr_in = "0000000" else "00000" & config;
 	f2hValid_out <= fifoValid when chanAddr_in = "0000000" else '1';
 	fifoReady <= f2hReady_in when chanAddr_in = "0000000" else '0';
 
 	spiCS_out <= not config(CHIPSEL);
 	
 	spi_master : entity work.spi_master
-      generic map(
-         SLOW_COUNT => "111011",  -- spiClk = sysClk/120 (400kHz @48MHz)
-         FAST_COUNT => "000000",  -- spiClk = sysClk/2 (24MHz @48MHz)
-         BIT_ORDER  => '1'        -- MSB first
+		generic map(
+			SLOW_COUNT => "111011",  -- spiClk = sysClk/120 (400kHz @48MHz)
+			FAST_COUNT => "000000",  -- spiClk = sysClk/2 (24MHz @48MHz)
+			BIT_ORDER  => '1'        -- MSB first
 		)
 		port map(
 			reset_in       => '0',
 			clk_in         => clk_in,
-			turbo_in       => config(TURBO),
 
 			-- Send pipe
+			turbo_in       => config(TURBO),
+			suppress_in    => config(SUPPRESS),
 			sendData_in    => sendData,
 			sendValid_in   => sendValid,
 			sendReady_out  => sendReady,
