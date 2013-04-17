@@ -1,0 +1,46 @@
+#
+# Copyright (C) 2009-2012 Chris McClelland
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU Lesser General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU Lesser General Public License for more details.
+#
+# You should have received a copy of the GNU Lesser General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+#
+
+#===============================================================================
+# USB interface
+#===============================================================================
+NET "fx2Clk_in"       LOC="R9"   | IOSTANDARD=LVTTL;   # IFCLK
+NET "fx2Addr_out<0>"  LOC="P12"  | IOSTANDARD=LVTTL;   # PA4/FIFOADR0
+NET "fx2Addr_out<1>"  LOC="T13"  | IOSTANDARD=LVTTL;   # PA5/FIFOADR1
+
+NET "fx2Data_io<0>"   LOC="T2"   | IOSTANDARD=LVTTL;   # PB0/FD0
+NET "fx2Data_io<1>"   LOC="R2"   | IOSTANDARD=LVTTL;   # PB1/FD1
+NET "fx2Data_io<2>"   LOC="T3"   | IOSTANDARD=LVTTL;   # PB2/FD2
+NET "fx2Data_io<3>"   LOC="P4"   | IOSTANDARD=LVTTL;   # PB3/FD3
+NET "fx2Data_io<4>"   LOC="R3"   | IOSTANDARD=LVTTL;   # PB4/FD4
+NET "fx2Data_io<5>"   LOC="N4"   | IOSTANDARD=LVTTL;   # PB5/FD5
+NET "fx2Data_io<6>"   LOC="P5"   | IOSTANDARD=LVTTL;   # PB6/FD6
+NET "fx2Data_io<7>"   LOC="N6"   | IOSTANDARD=LVTTL;   # PB7/FD7
+
+NET "fx2Read_out"     LOC="P9"   | IOSTANDARD=LVTTL;   # RDY0/SLRD
+NET "fx2OE_out"       LOC="P7"   | IOSTANDARD=LVTTL;   # PA2/SLOE
+NET "fx2GotData_in"   LOC="T8"   | IOSTANDARD=LVTTL;   # CTL2/FLAGC
+
+NET "fx2Write_out"    LOC="N10"  | IOSTANDARD=LVTTL;   # RDY1/SLWR
+NET "fx2GotRoom_in"   LOC="T7"   | IOSTANDARD=LVTTL;   # CTL1/FLAGB
+NET "fx2PktEnd_out"   LOC="R13"  | IOSTANDARD=LVTTL;   # PA6/PKTEND
+
+#===============================================================================
+# Timing constraints
+#===============================================================================
+NET "fx2Clk_in" TNM_NET="fx2Clk_grp";
+TIMESPEC "TS_clk" = PERIOD "fx2Clk_grp" 20.000 ns HIGH 50 %;
