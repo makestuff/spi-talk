@@ -63,9 +63,8 @@ typedef enum {
 //     w1 07;w0 D7;w1 02;w0 FF;w1 05;r0 1
 //   } while ( !(statusByte & READY) );
 //
-FlashStatus flash(const char *fileName, const char **error) {
+FlashStatus flash(const char *fileName, uint32 pageSize, uint32 pageShift, const char **error) {
 	FlashStatus retVal = FLASH_SUCCESS, status;
-	const uint32 pageSize = 264;
 	uint8 tmp[pageSize+4];
 	uint16 i;
 	uint32 pageNum = 0;
@@ -115,7 +114,7 @@ FlashStatus flash(const char *fileName, const char **error) {
 		);
 		CHECK_STATUS(status, FLASH_FPGALINK, cleanup, "flash()");
 		
-		u.i = pageNum << 9;
+		u.i = pageNum << pageShift;
 		tmp[0] = CMD_BUF1_FLASH;
 		tmp[1] = u.b[2];  // TODO: this assumes little-endian machine
 		tmp[2] = u.b[1];
@@ -180,8 +179,11 @@ int main(int argc, const char *argv[]) {
 	bool isNeroCapable, isCommCapable;
 	const char *vp = NULL, *ivp = NULL, *progConfig = NULL;
 	//const char *portConfig = NULL;
+	const char *flashSize = NULL;
 	const char *fileName = NULL;
 	const char *const prog = argv[0];
+	uint32 pageSize = 0;
+	uint32 pageShift = 0;
 
 	printf("SPI-Flash Example Copyright (C) 2013 Chris McClelland\n\n");
 	argv++;
@@ -202,29 +204,53 @@ int main(int argc, const char *argv[]) {
 		case 'i':
 			GET_ARG("i", ivp, 3, cleanup);
 			break;
-		//case 'd':
-		//	GET_ARG("d", portConfig, 4, cleanup);
-		//	break;
+		case 's':
+			GET_ARG("s", flashSize, 5, cleanup);
+			break;
 		case 'p':
-			GET_ARG("p", progConfig, 5, cleanup);
+			GET_ARG("p", progConfig, 6, cleanup);
 			break;
 		case 'f':
-			GET_ARG("f", fileName, 6, cleanup);
+			GET_ARG("f", fileName, 7, cleanup);
 			break;
 		default:
 			invalid(prog, argv[0][1]);
-			FAIL(7, cleanup);
+			FAIL(8, cleanup);
 		}
 		argv++;
 		argc--;
 	}
 	if ( !vp ) {
 		missing(prog, "v <VID:PID>");
-		FAIL(8, cleanup);
+		FAIL(9, cleanup);
+	}
+	if ( !flashSize ) {
+		missing(prog, "s <size:shift>");
+		FAIL(10, cleanup);
+	}
+	pageSize = (uint32)strtoul(flashSize, (char**)&flashSize, 10);
+	if ( !pageSize ) {
+		fprintf(stderr, "The flash size should look like <528:10>\n");
+		FAIL(11, cleanup);
+	}
+	if ( *flashSize != ':' ) {
+		fprintf(stderr, "The flash size should look like <528:10>\n");
+		FAIL(12, cleanup);
+	}
+	pageShift = (uint32)strtoul(flashSize+1, (char**)&flashSize, 10);
+	if ( !pageShift ) {
+		fprintf(stderr, "The flash size should look like <528:10>\n");
+		FAIL(13, cleanup);
+	}
+	if ( *flashSize != '\0' ) {
+		fprintf(stderr, "The flash size should look like <528:10>\n");
+		FAIL(14, cleanup);
 	}
 
+	printf("pageSize = %d\npageShift = %d\n", pageSize, pageShift);
+
 	status = flInitialise(0, &error);
-	CHECK_STATUS(status, 9, cleanup);
+	CHECK_STATUS(status, 15, cleanup);
 	
 	printf("Attempting to open connection to FPGALink device %s...\n", vp);
 	status = flOpen(vp, &handle, NULL);
@@ -233,7 +259,7 @@ int main(int argc, const char *argv[]) {
 			int count = 60;
 			printf("Loading firmware into %s...\n", ivp);
 			status = flLoadStandardFirmware(ivp, vp, &error);
-			CHECK_STATUS(status, 10, cleanup);
+			CHECK_STATUS(status, 16, cleanup);
 			
 			printf("Awaiting renumeration");
 			flSleep(1000);
@@ -241,31 +267,24 @@ int main(int argc, const char *argv[]) {
 				printf(".");
 				fflush(stdout);
 				status = flIsDeviceAvailable(vp, &flag, &error);
-				CHECK_STATUS(status, 11, cleanup);
+				CHECK_STATUS(status, 17, cleanup);
 				flSleep(100);
 				count--;
 			} while ( !flag && count );
 			printf("\n");
 			if ( !flag ) {
 				fprintf(stderr, "FPGALink device did not renumerate properly as %s\n", vp);
-				FAIL(12, cleanup);
+				FAIL(18, cleanup);
 			}
 			
 			printf("Attempting to open connection to FPGLink device %s again...\n", vp);
 			status = flOpen(vp, &handle, &error);
-			CHECK_STATUS(status, 13, cleanup);
+			CHECK_STATUS(status, 19, cleanup);
 		} else {
 			fprintf(stderr, "Could not open FPGALink device at %s and no initial VID:PID was supplied\n", vp);
-			FAIL(14, cleanup);
+			FAIL(20, cleanup);
 		}
 	}
-
-	//if ( portConfig ) {
-	//	printf("Configuring ports...\n");
-	//	status = flPortConfig(handle, portConfig, &error);
-	//	CHECK_STATUS(status, 15, cleanup);
-	//	flSleep(100);
-	//}
 
 	isNeroCapable = flIsNeroCapable(handle);
 	isCommCapable = flIsCommCapable(handle);
@@ -273,22 +292,22 @@ int main(int argc, const char *argv[]) {
 		printf("Executing programming configuration \"%s\"...\n", progConfig);
 		if ( isNeroCapable ) {
 			status = flProgram(handle, progConfig, NULL, &error);
-			CHECK_STATUS(status, 16, cleanup);
+			CHECK_STATUS(status, 21, cleanup);
 		} else {
 			fprintf(stderr, "Program operation requested but device does not support NeroProg\n");
 			FAIL(17, cleanup);
 		}
 	}
 	status = flFifoMode(handle, 0x01, &error);
-	CHECK_STATUS(status, 18, cleanup);
+	CHECK_STATUS(status, 22, cleanup);
 
 	if ( fileName ) {
 		if ( isCommCapable ) {
-			flashStatus = flash(fileName, &error);
-			if ( flashStatus ) { FAIL(19, cleanup); }
+			flashStatus = flash(fileName, pageSize, pageShift, &error);
+			if ( flashStatus ) { FAIL(23, cleanup); }
 		} else {
 			fprintf(stderr, "Flash operation requested but device does not support CommFPGA\n");
-			FAIL(19, cleanup);
+			FAIL(24, cleanup);
 		}
 	}
 cleanup:
@@ -301,12 +320,12 @@ cleanup:
 }
 
 void usage(const char *prog) {
-	printf("Usage: %s [-h] [-i <VID:PID>] -v <VID:PID> [-p <progConfig>]\n\n", prog);
+	printf("Usage: %s [-h] [-i <VID:PID>] -v <VID:PID> [-p <progConfig>]\n         -s <size:shift> -f <binFile>\n\n", prog);
 	printf("Load FX2LP firmware, load the FPGA, interact with the FPGA.\n\n");
-	printf("  -i <VID:PID>    initial vendor and product ID of the FPGALink device\n");
-	printf("  -v <VID:PID>    renumerated vendor and product ID of the FPGALink device\n");
-	//printf("  -d <portConfig> configure the ports\n");
-	printf("  -p <progConfig> configuration and programming file\n");
-	printf("  -f <flashFile>  file to load into flash\n");
-	printf("  -h              print this help and exit\n");
+	printf("  -i <VID:PID>     initial vendor and product ID of the FPGALink device\n");
+	printf("  -v <VID:PID>     renumerated vendor and product ID of the FPGALink device\n");
+	printf("  -s <size:shift>  set the page size and page-address shift\n");
+	printf("  -p <progConfig>  configuration and programming file\n");
+	printf("  -f <flashFile>   file to load into flash\n");
+	printf("  -h               print this help and exit\n");
 }
