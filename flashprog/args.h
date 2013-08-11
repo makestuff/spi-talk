@@ -19,10 +19,10 @@
 
 #include "liberror.h"
 
-#define GET_ARG(argName, var, failCode)					\
+#define GET_ARG(argName, var, failCode, label) \
 	argv++; \
 	argc--; \
-	if ( !argc ) { requires(prog, argName); FAIL(failCode); }	\
+	if ( !argc ) { requires(prog, argName); FAIL(failCode, label); } \
 	var = *argv
 
 void suggest(const char *prog);

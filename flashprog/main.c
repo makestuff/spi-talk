@@ -32,14 +32,11 @@ static inline FLStatus setConfig(uint8 mask, uint8 val, uint8 prevCount, const c
 	for ( i = 0; i < prevCount; i++ ) {
 		buf[i] = config;
 	}
-	config &= ~mask;
+	config = (uint8)(config & ~mask);
 	config |= val;
 	buf[i++] = config;
 	return flWriteChannel(handle, 1000, 0x01, i, buf, error);
 }
-
-// Main stuff
-#define CHECK(x) if ( status != FL_SUCCESS ) { FAIL(x); }
 
 #define CMD_BUF1_FLASH 0x83
 #define CMD_BUF1_WRITE 0x84
@@ -67,7 +64,7 @@ typedef enum {
 //   } while ( !(statusByte & READY) );
 //
 FlashStatus flash(const char *fileName, const char **error) {
-	FlashStatus returnCode = FLASH_SUCCESS, status;
+	FlashStatus retVal = FLASH_SUCCESS, status;
 	const uint32 pageSize = 264;
 	uint8 tmp[pageSize+4];
 	uint16 i;
@@ -78,10 +75,7 @@ FlashStatus flash(const char *fileName, const char **error) {
 		uint8 b[4];
 	} u;
 	FILE *file = fopen(fileName, "rb");
-	if ( !file ) {
-		errRender(error, "flash(): Unable to read from %s", fileName);
-		FAIL(FLASH_FILE);
-	}
+	CHECK_STATUS(!file, FLASH_FILE, cleanup, "flash(): Unable to read from %s", fileName);
 
 	printf("Flashing");
 	count = fread(tmp+4, 1, pageSize, file);
@@ -94,14 +88,14 @@ FlashStatus flash(const char *fileName, const char **error) {
 			0,                  // prevCount
 			error
 		);
-		CHECK_STATUS(status, "flash()", FLASH_FPGALINK);
+		CHECK_STATUS(status, FLASH_FPGALINK, cleanup, "flash()");
 		
 		tmp[0] = CMD_BUF1_WRITE;
 		tmp[1] = 0x00;
 		tmp[2] = 0x00;
 		tmp[3] = 0x00;
 		status = flWriteChannel(handle, 1000, 0x00, pageSize+4, tmp, error);
-		CHECK_STATUS(status, "flash()", FLASH_FPGALINK);
+		CHECK_STATUS(status, FLASH_FPGALINK, cleanup, "flash()");
 		
 		status = setConfig(
 			ENABLE,  // mask
@@ -109,7 +103,7 @@ FlashStatus flash(const char *fileName, const char **error) {
 			16,      // prevCount
 			error
 		);
-		CHECK_STATUS(status, "flash()", FLASH_FPGALINK);
+		CHECK_STATUS(status, FLASH_FPGALINK, cleanup, "flash()");
 		
 		// Kick off flash of buffer 1 data...
 		//		
@@ -119,7 +113,7 @@ FlashStatus flash(const char *fileName, const char **error) {
 			0,       // prevCount
 			error
 		);
-		CHECK_STATUS(status, "flash()", FLASH_FPGALINK);
+		CHECK_STATUS(status, FLASH_FPGALINK, cleanup, "flash()");
 		
 		u.i = pageNum << 9;
 		tmp[0] = CMD_BUF1_FLASH;
@@ -127,7 +121,7 @@ FlashStatus flash(const char *fileName, const char **error) {
 		tmp[2] = u.b[1];
 		tmp[3] = u.b[0];
 		status = flWriteChannel(handle, 1000, 0x00, 4, tmp, error);
-		CHECK_STATUS(status, "flash()", FLASH_FPGALINK);
+		CHECK_STATUS(status, FLASH_FPGALINK, cleanup, "flash()");
 		
 		status = setConfig(
 			ENABLE,  // mask
@@ -135,7 +129,7 @@ FlashStatus flash(const char *fileName, const char **error) {
 			16,      // prevCount
 			error
 		);
-		CHECK_STATUS(status, "flash()", FLASH_FPGALINK);
+		CHECK_STATUS(status, FLASH_FPGALINK, cleanup, "flash()");
 		
 		// Read status byte until done
 		//
@@ -147,12 +141,12 @@ FlashStatus flash(const char *fileName, const char **error) {
 				0,                  // prevCount
 				error
 			);
-			CHECK_STATUS(status, "flash()", FLASH_FPGALINK);
+			CHECK_STATUS(status, FLASH_FPGALINK, cleanup, "flash()");
 			
 			tmp[0] = CMD_STATUS;
 			tmp[1] = 0x00;
 			status = flWriteChannel(handle, 1000, 0x00, 2, tmp, error);
-			CHECK_STATUS(status, "flash()", FLASH_FPGALINK);
+			CHECK_STATUS(status, FLASH_FPGALINK, cleanup, "flash()");
 			
 			status = setConfig(
 				ENABLE,  // mask
@@ -160,10 +154,10 @@ FlashStatus flash(const char *fileName, const char **error) {
 				16,      // prevCount
 				error
 			);
-			CHECK_STATUS(status, "flash()", FLASH_FPGALINK);
+			CHECK_STATUS(status, FLASH_FPGALINK, cleanup, "flash()");
 			
 			status = flReadChannel(handle, 1000, 0x00, 2, tmp, error);
-			CHECK_STATUS(status, "flash()", FLASH_FPGALINK);
+			CHECK_STATUS(status, FLASH_FPGALINK, cleanup, "flash()");
 			i++;
 		} while ( !(tmp[1] & BM_READY) );
 		printf(".");
@@ -174,17 +168,18 @@ FlashStatus flash(const char *fileName, const char **error) {
 	}
 	printf("\n");
 cleanup:
-	return returnCode;
+	return retVal;
 }
 
 int main(int argc, const char *argv[]) {
-	int returnCode = 0;
+	int retVal = 0;
 	FLStatus status;
 	FlashStatus flashStatus;
 	const char *error = NULL;
 	bool flag;
 	bool isNeroCapable, isCommCapable;
-	const char *vp = NULL, *ivp = NULL, *portConfig = NULL, *progConfig = NULL;
+	const char *vp = NULL, *ivp = NULL, *progConfig = NULL;
+	//const char *portConfig = NULL;
 	const char *fileName = NULL;
 	const char *const prog = argv[0];
 
@@ -194,42 +189,42 @@ int main(int argc, const char *argv[]) {
 	while ( argc ) {
 		if ( argv[0][0] != '-' ) {
 			unexpected(prog, *argv);
-			FAIL(1);
+			FAIL(1, cleanup);
 		}
 		switch ( argv[0][1] ) {
 		case 'h':
 			usage(prog);
-			FAIL(0);
+			FAIL(0, cleanup);
 			break;
 		case 'v':
-			GET_ARG("v", vp, 2);
+			GET_ARG("v", vp, 2, cleanup);
 			break;
 		case 'i':
-			GET_ARG("i", ivp, 3);
+			GET_ARG("i", ivp, 3, cleanup);
 			break;
-		case 'd':
-			GET_ARG("d", portConfig, 4);
-			break;
+		//case 'd':
+		//	GET_ARG("d", portConfig, 4, cleanup);
+		//	break;
 		case 'p':
-			GET_ARG("p", progConfig, 5);
+			GET_ARG("p", progConfig, 5, cleanup);
 			break;
 		case 'f':
-			GET_ARG("f", fileName, 6);
+			GET_ARG("f", fileName, 6, cleanup);
 			break;
 		default:
 			invalid(prog, argv[0][1]);
-			FAIL(7);
+			FAIL(7, cleanup);
 		}
 		argv++;
 		argc--;
 	}
 	if ( !vp ) {
 		missing(prog, "v <VID:PID>");
-		FAIL(8);
+		FAIL(8, cleanup);
 	}
 
 	status = flInitialise(0, &error);
-	CHECK(9);
+	CHECK_STATUS(status, 9, cleanup);
 	
 	printf("Attempting to open connection to FPGALink device %s...\n", vp);
 	status = flOpen(vp, &handle, NULL);
@@ -238,7 +233,7 @@ int main(int argc, const char *argv[]) {
 			int count = 60;
 			printf("Loading firmware into %s...\n", ivp);
 			status = flLoadStandardFirmware(ivp, vp, &error);
-			CHECK(10);
+			CHECK_STATUS(status, 10, cleanup);
 			
 			printf("Awaiting renumeration");
 			flSleep(1000);
@@ -246,31 +241,31 @@ int main(int argc, const char *argv[]) {
 				printf(".");
 				fflush(stdout);
 				status = flIsDeviceAvailable(vp, &flag, &error);
-				CHECK(11);
+				CHECK_STATUS(status, 11, cleanup);
 				flSleep(100);
 				count--;
 			} while ( !flag && count );
 			printf("\n");
 			if ( !flag ) {
 				fprintf(stderr, "FPGALink device did not renumerate properly as %s\n", vp);
-				FAIL(12);
+				FAIL(12, cleanup);
 			}
 			
 			printf("Attempting to open connection to FPGLink device %s again...\n", vp);
 			status = flOpen(vp, &handle, &error);
-			CHECK(13);
+			CHECK_STATUS(status, 13, cleanup);
 		} else {
 			fprintf(stderr, "Could not open FPGALink device at %s and no initial VID:PID was supplied\n", vp);
-			FAIL(14);
+			FAIL(14, cleanup);
 		}
 	}
 
-	if ( portConfig ) {
-		printf("Configuring ports...\n");
-		status = flPortConfig(handle, portConfig, &error);
-		CHECK(15);
-		flSleep(100);
-	}
+	//if ( portConfig ) {
+	//	printf("Configuring ports...\n");
+	//	status = flPortConfig(handle, portConfig, &error);
+	//	CHECK_STATUS(status, 15, cleanup);
+	//	flSleep(100);
+	//}
 
 	isNeroCapable = flIsNeroCapable(handle);
 	isCommCapable = flIsCommCapable(handle);
@@ -278,22 +273,22 @@ int main(int argc, const char *argv[]) {
 		printf("Executing programming configuration \"%s\"...\n", progConfig);
 		if ( isNeroCapable ) {
 			status = flProgram(handle, progConfig, NULL, &error);
-			CHECK(16);
+			CHECK_STATUS(status, 16, cleanup);
 		} else {
 			fprintf(stderr, "Program operation requested but device does not support NeroProg\n");
-			FAIL(17);
+			FAIL(17, cleanup);
 		}
 	}
-	status = flFifoMode(handle, true, &error);
-	CHECK(18);
+	status = flFifoMode(handle, 0x01, &error);
+	CHECK_STATUS(status, 18, cleanup);
 
 	if ( fileName ) {
 		if ( isCommCapable ) {
 			flashStatus = flash(fileName, &error);
-			if ( flashStatus ) { FAIL(19); }
+			if ( flashStatus ) { FAIL(19, cleanup); }
 		} else {
 			fprintf(stderr, "Flash operation requested but device does not support CommFPGA\n");
-			FAIL(19);
+			FAIL(19, cleanup);
 		}
 	}
 cleanup:
@@ -302,7 +297,7 @@ cleanup:
 		flFreeError(error);
 	}
 	flClose(handle);
-	return returnCode;
+	return retVal;
 }
 
 void usage(const char *prog) {
@@ -310,7 +305,7 @@ void usage(const char *prog) {
 	printf("Load FX2LP firmware, load the FPGA, interact with the FPGA.\n\n");
 	printf("  -i <VID:PID>    initial vendor and product ID of the FPGALink device\n");
 	printf("  -v <VID:PID>    renumerated vendor and product ID of the FPGALink device\n");
-	printf("  -d <portConfig> configure the ports\n");
+	//printf("  -d <portConfig> configure the ports\n");
 	printf("  -p <progConfig> configuration and programming file\n");
 	printf("  -f <flashFile>  file to load into flash\n");
 	printf("  -h              print this help and exit\n");
