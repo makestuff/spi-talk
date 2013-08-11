@@ -47,11 +47,17 @@ NET "fx2PktEnd_out"   LOC="P102" | IOSTANDARD=LVTTL;   # PA6/PKTEND
 #NET "spiData_out"     LOC="P30"  | IOSTANDARD=LVTTL;
 #NET "spiData_in"      LOC="P29"  | IOSTANDARD=LVTTL;
 
-# Actual SD-card slot
-NET "spiCS_out"       LOC="P48"  | IOSTANDARD=LVTTL;
-NET "spiData_out"     LOC="P47"  | IOSTANDARD=LVTTL;
-NET "spiClk_out"      LOC="P46"  | IOSTANDARD=LVTTL;
-NET "spiData_in"      LOC="P45"  | IOSTANDARD=LVTTL;
+# Actual SD-Card slot
+#NET "spiCS_out"       LOC="P48"  | IOSTANDARD=LVTTL;
+#NET "spiData_out"     LOC="P47"  | IOSTANDARD=LVTTL;
+#NET "spiClk_out"      LOC="P46"  | IOSTANDARD=LVTTL;
+#NET "spiData_in"      LOC="P45"  | IOSTANDARD=LVTTL;
+
+# Configuration SPI-Flash
+NET "spiCS_out"       LOC="P38"  | IOSTANDARD=LVTTL;
+NET "spiData_out"     LOC="P64"  | IOSTANDARD=LVTTL;
+NET "spiClk_out"      LOC="P70"  | IOSTANDARD=LVTTL;
+NET "spiData_in"      LOC="P65"  | IOSTANDARD=LVTTL;
 
 #===============================================================================
 # Timing constraint of FX2 48MHz clock "fx2Clk_in"
