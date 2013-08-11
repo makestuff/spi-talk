@@ -17,7 +17,7 @@
 #ifndef ARGS_H
 #define ARGS_H
 
-#include "liberror.h"
+#include <liberror.h>
 
 #define GET_ARG(argName, var, failCode, label) \
 	argv++; \
