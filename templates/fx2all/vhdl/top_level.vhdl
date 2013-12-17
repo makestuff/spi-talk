@@ -20,6 +20,9 @@ use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
 
 entity top_level is
+	generic (
+		NUM_DEVS     : integer := 1
+	);
 	port(
 		-- FX2LP interface ---------------------------------------------------------------------------
 		fx2Clk_in      : in    std_logic;                    -- 48MHz clock from FX2LP
@@ -37,33 +40,33 @@ entity top_level is
 		fx2PktEnd_out  : out   std_logic;                    -- asserted (active-low) when a host read needs to be committed early
 
 		-- Peripheral interface ----------------------------------------------------------------------
-		spiCS_out      : out   std_logic;
 		spiClk_out     : out   std_logic;
 		spiData_out    : out   std_logic;
-		spiData_in     : in    std_logic
+		spiData_in     : in    std_logic;
+		spiCS_out      : out   std_logic_vector(NUM_DEVS-1 downto 0)
 	);
 end entity;
 
 architecture structural of top_level is
 	-- Channel read/write interface -----------------------------------------------------------------
-	signal chanAddr  : std_logic_vector(6 downto 0);  -- the selected channel (0-127)
+	signal chanAddr   : std_logic_vector(6 downto 0);  -- the selected channel (0-127)
 
 	-- Host >> FPGA pipe:
-	signal h2fData   : std_logic_vector(7 downto 0);  -- data lines used when the host writes to a channel
-	signal h2fValid  : std_logic;                     -- '1' means "on the next clock rising edge, please accept the data on h2fData"
-	signal h2fReady  : std_logic;                     -- channel logic can drive this low to say "I'm not ready for more data yet"
+	signal h2fData    : std_logic_vector(7 downto 0);  -- data lines used when the host writes to a channel
+	signal h2fValid   : std_logic;                     -- '1' means "on the next clock rising edge, please accept the data on h2fData"
+	signal h2fReady   : std_logic;                     -- channel logic can drive this low to say "I'm not ready for more data yet"
 
 	-- Host << FPGA pipe:
-	signal f2hData   : std_logic_vector(7 downto 0);  -- data lines used when the host reads from a channel
-	signal f2hValid  : std_logic;                     -- channel logic can drive this low to say "I don't have data ready for you"
-	signal f2hReady  : std_logic;                     -- '1' means "on the next clock rising edge, put your next byte of data on f2hData"
+	signal f2hData    : std_logic_vector(7 downto 0);  -- data lines used when the host reads from a channel
+	signal f2hValid   : std_logic;                     -- channel logic can drive this low to say "I don't have data ready for you"
+	signal f2hReady   : std_logic;                     -- '1' means "on the next clock rising edge, put your next byte of data on f2hData"
 	-- ----------------------------------------------------------------------------------------------
 
 	-- Needed so that the comm_fpga_fx2 module can drive both fx2Read_out and fx2OE_out
-	signal fx2Read   : std_logic;
+	signal fx2Read    : std_logic;
 
 	-- Reset signal so host can delay startup
-	signal fx2Reset  : std_logic;
+	signal fx2Reset   : std_logic;
 begin
 	-- CommFPGA module
 	fx2Read_out <= fx2Read;
@@ -98,6 +101,9 @@ begin
 
 	-- Switches & LEDs application
 	spi_talk_app : entity work.spi_talk
+      generic map (
+         NUM_DEVS     => NUM_DEVS
+		)
 		port map(
 			clk_in       => fx2Clk_in,
 			
@@ -111,9 +117,9 @@ begin
 			f2hReady_in  => f2hReady,
 			
 			-- Peripheral interface
-			spiCS_out    => spiCS_out,
 			spiClk_out   => spiClk_out,
 			spiData_out  => spiData_out,
-			spiData_in   => spiData_in
+			spiData_in   => spiData_in,
+			spiCS_out    => spiCS_out
 		);
 end architecture;

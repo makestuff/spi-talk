@@ -22,6 +22,9 @@ use ieee.numeric_std.all;
 use unisim.vcomponents.all;
 
 entity top_level is
+	generic (
+		NUM_DEVS     : integer := 1
+	);
 	port(
 		-- FX2LP interface ---------------------------------------------------------------------------
 		fx2Clk_in      : in    std_logic;                    -- 48MHz clock from FX2LP
@@ -62,7 +65,7 @@ architecture structural of top_level is
 	signal fx2Reset   : std_logic;
 
 	-- SPI signals
-	signal spiCS      : std_logic;
+	signal spiCS      : std_logic_vector(NUM_DEVS-1 downto 0);
 	signal spiClk     : std_logic;
 	signal spiDataOut : std_logic;
 	signal spiDataIn  : std_logic;
@@ -100,6 +103,9 @@ begin
 
 	-- Switches & LEDs application
 	spi_talk_app : entity work.spi_talk
+      generic map (
+         NUM_DEVS     => NUM_DEVS
+		)
 		port map(
 			clk_in       => fx2Clk_in,
 			
@@ -113,10 +119,10 @@ begin
 			f2hReady_in  => f2hReady,
 			
 			-- Peripheral interface
-			spiCS_out    => spiCS,
 			spiClk_out   => spiClk,
 			spiData_out  => spiDataOut,
-			spiData_in   => spiDataIn
+			spiData_in   => spiDataIn,
+			spiCS_out    => spiCS
 		);
 
 	spi_access: spi_access
@@ -126,7 +132,7 @@ begin
 		port map(
 			MISO => spiDataIn,   -- 1-bit SPI output data
 			MOSI => spiDataOut,  -- 1-bit SPI input data
-			CSB => spiCS,        -- 1-bit SPI chip enable
+			CSB => spiCS(0),     -- 1-bit SPI chip enable
 			CLK => spiClk        -- 1-bit SPI clock input
 		);
 

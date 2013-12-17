@@ -21,7 +21,7 @@ use ieee.numeric_std.all;
 
 entity spi_talk is
 	generic (
-		NUM_DEVS     : integer := 1
+		NUM_DEVS     : integer
 	);
 	port(
 		clk_in       : in  std_logic;
