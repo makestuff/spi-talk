@@ -1,7 +1,7 @@
 ##############################################################
 #
 # Xilinx Core Generator version 14.1
-# Date: Mon Apr 15 16:06:19 2013
+# Date: Thu Dec  6 00:00:00 2012
 #
 ##############################################################
 #
@@ -52,7 +52,7 @@ CSET axis_type=FIFO
 CSET buser_width=1
 CSET clock_enable_type=Slave_Interface_Clock_Enable
 CSET clock_type_axi=Common_Clock
-CSET component_name=fifo
+CSET component_name=xilinx_fifo
 CSET data_count=false
 CSET data_count_width=11
 CSET disable_timing_violations=false
@@ -211,4 +211,4 @@ CSET wuser_width=1
 MISC pkg_timestamp=2012-04-13T16:13:14Z
 # END Extra information
 GENERATE
-# CRC: 9685d8aa
+# CRC: deadfood
