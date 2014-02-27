@@ -80,7 +80,7 @@ begin
 
 	sendData <= h2fData_in;
 	sendValid <= h2fValid_in when chanAddr_in = "0000000" else '0';
-	h2fReady_out <= sendReady when chanAddr_in = "0000000" else '1';
+	h2fReady_out <= sendReady;  -- wait until send complete before accepting more commands on ANY channel
 
 	f2hData_out <=
 		fifoData when chanAddr_in = "0000000"
