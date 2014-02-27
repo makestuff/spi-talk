@@ -42,7 +42,7 @@ NET "fx2PktEnd_out"   LOC="P102" | IOSTANDARD=LVTTL;   # PA6/PKTEND
 #===============================================================================
 NET "spiCS_out<0>"    LOC="P38"  | IOSTANDARD=LVTTL;
 NET "spiCS_out<1>"    LOC="P46"  | IOSTANDARD=LVTTL;
-NET "spiData_out"     LOC="P45"  | IOSTANDARD=LVTTL;
+NET "spiData_out"     LOC="P64"  | IOSTANDARD=LVTTL;
 NET "spiClk_out"      LOC="P70"  | IOSTANDARD=LVTTL;
 NET "spiData_in"      LOC="P65"  | IOSTANDARD=LVTTL;
 
