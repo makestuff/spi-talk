@@ -3,3 +3,4 @@
 ../../../../bin/hdlmake.py -t ../templates/fx2all/vhdl -b nexys2-1200 -p fpga prom
 ../../../../bin/hdlmake.py -t ../templates/fx2min/vhdl -b lx9r2 -p fpga
 ../../../../bin/hdlmake.py -t ../templates/fx2min/vhdl -b lx9r3 -p fpga
+../../../../bin/hdlmake.py -t ../templates/ss/vhdl -b canton-lx9 -p fpga

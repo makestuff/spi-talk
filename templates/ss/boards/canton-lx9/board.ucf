@@ -1,0 +1,39 @@
+#
+# Copyright (C) 2009-2012 Chris McClelland
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU Lesser General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU Lesser General Public License for more details.
+#
+# You should have received a copy of the GNU Lesser General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+#
+
+#===============================================================================
+# USB interface
+#===============================================================================
+NET "sysClk_in"       LOC="P85"  | IOSTANDARD=LVTTL;   # 25MHz
+
+NET "serClk_in"       LOC="P11"  | IOSTANDARD=LVTTL;   # XCK: EXIO1
+NET "serData_in"      LOC="P12"  | IOSTANDARD=LVTTL;   # TXD: EXIO2
+NET "serData_out"     LOC="P14"  | IOSTANDARD=LVTTL;   # RXD: EXIO3
+
+#===============================================================================
+# SPI interface
+#===============================================================================
+NET "spiCS_out<0>"    LOC="P38"  | IOSTANDARD=LVTTL;
+NET "spiData_out"     LOC="P64"  | IOSTANDARD=LVTTL;
+NET "spiClk_out"      LOC="P70"  | IOSTANDARD=LVTTL;
+NET "spiData_in"      LOC="P65"  | IOSTANDARD=LVTTL;
+
+#===============================================================================
+# Timing constraint of 25MHz clock "sysClk_in"
+#===============================================================================
+NET "sysClk_in" TNM_NET = "sysClk_in";
+TIMESPEC "TS_clk" = PERIOD "sysClk_in" 40 ns HIGH 50 %;
