@@ -1,3 +1,4 @@
+../../../../bin/hdlmake.py -t ../templates/eppa/vhdl -b ep2c5
 ../../../../bin/hdlmake.py -t ../templates/ssa/vhdl -b ep2c5
 ../../../../bin/hdlmake.py -t ../templates/fx2s3an/vhdl -b aes220
 ../../../../bin/hdlmake.py -t ../templates/fx2all/vhdl -b nexys2-1200 -p fpga prom
