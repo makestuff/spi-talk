@@ -57,6 +57,8 @@ architecture structural of top_level is
 	signal spiClk     : std_logic;
 	signal spiMOSI    : std_logic;
 	signal spiMISO    : std_logic;
+	--signal sendData   : std_logic_vector(3 downto 0);
+	--signal recvData   : std_logic_vector(3 downto 0);
 
 	-- Component from the Altera library to give application access to the config flash.
 	component altserial_flash_loader
@@ -68,13 +70,16 @@ architecture structural of top_level is
 			lpm_type                : string
 		);
 		port (
-			data0out                : out std_logic;
-			noe                     : in  std_logic;
-			scein                   : in  std_logic;
-			asmi_access_granted     : in  std_logic;
-			asmi_access_request     : out std_logic;
 			dclkin                  : in  std_logic;
-			sdoin                   : in  std_logic 
+			scein                   : in  std_logic;
+			sdoin                   : in  std_logic;
+			data0out                : out std_logic;
+			--data_in                 : in  std_logic_vector(3 downto 0);
+			--data_oe                 : in  std_logic_vector(3 downto 0);
+			--data_out                : out std_logic_vector(3 downto 0);
+			asmi_access_request     : out std_logic;
+			asmi_access_granted     : in  std_logic;
+			noe                     : in  std_logic
 		);
 	end component;
 begin
@@ -136,12 +141,18 @@ begin
 			lpm_type                => "altserial_flash_loader"
 		)
 		port map (
-			asmi_access_granted => '0',
-			asmi_access_request => open,
-			noe                 => '0',
-			scein               => spiCS(0),
 			dclkin              => spiClk,
+			scein               => spiCS(0),
 			sdoin               => spiMOSI,
-			data0out            => spiMISO
+			data0out            => spiMISO,
+			--data_in             => sendData,
+			--data_oe             => "1101",  -- drive D3, D2 & D0
+			--data_out            => recvData,
+			asmi_access_request => open,  -- ignore requests
+			asmi_access_granted => '0',   -- application always has control
+			noe                 => '0'    -- always drive
 		);
+	--sendData <= "111" & spiMOSI;
+	--spiMISO <= recvData(1);
+
 end architecture;
