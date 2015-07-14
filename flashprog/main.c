@@ -49,6 +49,7 @@ static inline FLStatus setConfig(uint8 mask, uint8 val, uint8 prevCount, const c
 typedef enum {
 	FLASH_SUCCESS,
 	FLASH_FPGALINK,
+	FLASH_ALLOC,
 	FLASH_FILE
 } FlashStatus;
 
@@ -65,7 +66,6 @@ typedef enum {
 //
 FlashStatus flash(const char *fileName, uint32 pageSize, uint32 pageShift, const char **error) {
 	FlashStatus retVal = FLASH_SUCCESS, status;
-	uint8 tmp[pageSize+4];
 	uint16 i;
 	uint32 pageNum = 0;
 	size_t count;
@@ -73,7 +73,10 @@ FlashStatus flash(const char *fileName, uint32 pageSize, uint32 pageShift, const
 		uint32 i;
 		uint8 b[4];
 	} u;
-	FILE *file = fopen(fileName, "rb");
+	FILE *file;
+	uint8 *const tmp = malloc(pageSize+4);
+	CHECK_STATUS(!tmp, FLASH_ALLOC, cleanup, "flash(): Allocation error");
+	file = fopen(fileName, "rb");
 	CHECK_STATUS(!file, FLASH_FILE, cleanup, "flash(): Unable to read from %s", fileName);
 
 	printf("Flashing");
@@ -167,6 +170,7 @@ FlashStatus flash(const char *fileName, uint32 pageSize, uint32 pageShift, const
 	}
 	printf("\n");
 cleanup:
+	free(tmp);
 	return retVal;
 }
 

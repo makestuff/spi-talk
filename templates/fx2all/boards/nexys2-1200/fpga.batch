@@ -1,5 +1,5 @@
 setMode -bs
-setCable -port xsvf -file top_level.xsvf
+setCable -port xsvf -file fpga.xsvf
 addDevice -p 1 -file top_level.bit
 addDevice -p 2 -file ${XILINX}/xcf/data/xcf04s.bsd
 program -p 1

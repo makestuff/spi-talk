@@ -45,19 +45,19 @@ begin
 	outputValid_out <= not(outputEmpty);
 
 	-- The encapsulated FIFO
-	fifo : entity work.xilinx_fifo
+	fifo : entity work.altera_fifo
 		port map(
-			clk        => clk_in,
+			clock      => clk_in,
 
 			-- Production end
-			din        => inputData_in,
-			wr_en      => inputValid_in,
+			data       => inputData_in,
+			wrreq      => inputValid_in,
 			full       => inputFull,
 
 			-- Consumption end
-			dout       => outputData_out,
+			q          => outputData_out,
 			empty      => outputEmpty,
-			rd_en      => outputReady_in
+			rdreq      => outputReady_in
 		);
 	
 end architecture;

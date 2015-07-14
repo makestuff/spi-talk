@@ -19,6 +19,34 @@ library ieee;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
 
+entity spi_talk is
+	generic (
+		NUM_DEVS     : integer
+	);
+	port(
+		clk_in       : in  std_logic;
+
+		-- DVR interface -----------------------------------------------------------------------------
+		chanAddr_in  : in  std_logic_vector(6 downto 0);  -- the selected channel (0-127)
+
+		-- Host >> FPGA pipe:
+		h2fData_in   : in  std_logic_vector(7 downto 0);  -- data lines used when the host writes to a channel
+		h2fValid_in  : in  std_logic;                     -- '1' means "on the next clock rising edge, please accept the data on h2fData"
+		h2fReady_out : out std_logic;                     -- channel logic can drive this low to say "I'm not ready for more data yet"
+
+		-- Host << FPGA pipe:
+		f2hData_out  : out std_logic_vector(7 downto 0);  -- data lines used when the host reads from a channel
+		f2hValid_out : out std_logic;                     -- channel logic can drive this low to say "I don't have data ready for you"
+		f2hReady_in  : in  std_logic;                     -- '1' means "on the next clock rising edge, put your next byte of data on f2hData"
+
+		-- Peripheral interface ----------------------------------------------------------------------
+		spiClk_out   : out   std_logic;
+		spiData_out  : out   std_logic;
+		spiData_in   : in    std_logic;
+		spiCS_out    : out   std_logic_vector(NUM_DEVS-1 downto 0)
+	);
+end entity;
+
 architecture rtl of spi_talk is
 	signal sendData    : std_logic_vector(7 downto 0);
 	signal sendValid   : std_logic;
@@ -32,11 +60,11 @@ architecture rtl of spi_talk is
 	signal fifoValid   : std_logic;
 	signal fifoReady   : std_logic;
 
-	signal config      : std_logic_vector(2 downto 0);
-	signal config_next : std_logic_vector(2 downto 0);
+	signal config      : std_logic_vector(NUM_DEVS+1 downto 0);
+	signal config_next : std_logic_vector(NUM_DEVS+1 downto 0);
 	constant TURBO     : integer := 0;
-	constant CHIPSEL   : integer := 1;
-	constant SUPPRESS  : integer := 2;
+	constant SUPPRESS  : integer := 1;
+	constant CHIPSEL   : integer := 2;
 begin
 	-- Infer registers
 	process(clk_in)
@@ -47,18 +75,24 @@ begin
 	end process;
 	
 	config_next <=
-		h2fData_in(2 downto 0) when h2fValid_in = '1' and chanAddr_in /= "0000000"
+		h2fData_in(NUM_DEVS+1 downto 0) when h2fValid_in = '1' and chanAddr_in /= "0000000"
 		else config;
 
 	sendData <= h2fData_in;
 	sendValid <= h2fValid_in when chanAddr_in = "0000000" else '0';
-	h2fReady_out <= sendReady when chanAddr_in = "0000000" else '1';
+	h2fReady_out <= sendReady;  -- wait until send complete before accepting more commands on ANY channel
 
-	f2hData_out <= fifoData when chanAddr_in = "0000000" else "00000" & config;
-	f2hValid_out <= fifoValid when chanAddr_in = "0000000" else '1';
-	fifoReady <= f2hReady_in when chanAddr_in = "0000000" else '0';
+	f2hData_out <=
+		fifoData when chanAddr_in = "0000000"
+		else std_logic_vector(resize(unsigned(config), 8));
+	f2hValid_out <=
+		fifoValid when chanAddr_in = "0000000"
+		else '1';
+	fifoReady <=
+		f2hReady_in when chanAddr_in = "0000000"
+		else '0';
 
-	spiCS_out <= not config(CHIPSEL);
+	spiCS_out <= not config(CHIPSEL+NUM_DEVS-1 downto CHIPSEL);
 	
 	spi_master : entity work.spi_master
 		generic map(
